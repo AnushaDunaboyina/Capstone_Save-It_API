@@ -44,7 +44,7 @@ const addDocument = async (req, res) => {
 
     const newDocument = {
       // Create a new document object with file details
-      filename: file.originalName,
+      filename: file.originalname,
       filepath: file.path,
       tags: JSON.stringify(req.body.tags || []),
       createdAt: new Date(),
@@ -69,23 +69,22 @@ const addDocument = async (req, res) => {
 // Delete a document by ID
 const deleteDocument = async (req, res) => {
   try {
-    const deleted = await knex("documents").where({ id: req.params.id }).del(); // Delete the document with the specified ID from the database
+    const deleted = await knex("documents")
+      .where({ id: req.params.id })
+      .delete(); // Delete the document with the specified ID from the database
 
     if (!deleted) {
-      // Check if the document was found and deleted
       return res.status(404).json({
-        message: `Document with ID ${req.params.id} not found`,
+        message: `Document with ID ${req.params.id} not found`, // Check if the document was found and deleted
       });
     }
 
     res.status(200).json({
-      // Send success response if the document was deleted
-      message: "Document deleted successfully",
+      message: "Document deleted successfully", // Send success response if the document was deleted
     });
   } catch (error) {
     res.status(500).json({
-      // Send error response if there's an issue
-      message: `Unable to delete document with ID ${req.params.id}`,
+      message: `Unable to delete document with ID ${req.params.id}`, // Send error response if there's an issue
     });
   }
 };
