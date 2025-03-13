@@ -13,7 +13,7 @@ const index = async (req, res) => {
   }
 };
 
-// Get a single document
+// GET a single document
 const findDocument = async (req, res) => {
   try {
     const document = await knex("documents").where({ id: req.params.id }); // Fetch a document with the specified ID from the database
@@ -34,19 +34,41 @@ const findDocument = async (req, res) => {
   }
 };
 
-//  Add or POST a new document (using a middleware like 'multer' for file uploads)
+// POST or ADD a new document (using a middleware like 'multer' for file uploads)
 const addDocument = async (req, res) => {
+  console.log("Add document");
+  console.log("Uploaded File:", req.file);
+  console.log("Request Body:", req.body);
+  // console.log(req.file); // This will help you debug the uploaded file
   try {
     const file = req.file; // Get the uploaded file from the request
-    if (!file) {
-      return res.status(400).send("No file uploaded");
+    const { filename, tags } = req.body;
+
+    if (!file || !filename || !tags) {
+      return res.status(400).json({
+        message: "All fields are required (File, Filename, and Tags)",
+      });
     }
 
+    // Ensure tags is an array
+    let tagsArray;
+    try {
+      tagsArray = JSON.parse(tags); // Parse tags if it's a JSON string
+    } catch (error) {
+      return res
+        .status(400)
+        .json({ message: "Tags must be a valid JSON array" });
+    }
+    if (!Array.isArray(tags)) {
+      return res.status(400).json({ message: "Tags must be an array" });
+    }
+
+    // Create a new document object with file details
     const newDocument = {
-      // Create a new document object with file details
-      filename: file.originalname,
+      filename,
       filepath: file.path,
-      tags: JSON.stringify(req.body.tags || []),
+      // tags: JSON.stringify(tags),
+      tags: tagsArray, // Store tags as an array
       createdAt: new Date(),
     };
 
@@ -60,20 +82,69 @@ const addDocument = async (req, res) => {
     res.status(201).json(createdDocument); // Send the created document as JSON response
   } catch (error) {
     res.status(500).json({
-      // Send error response if there's an issue
-      message: `Unable to add new document: ${error}`,
+      message: `Unable to add new document: ${error}`, // Send error response if there's an issue
     });
   }
 };
 
-// Delete a document by ID
+// Edit /Update a document by ID (PATCH)
+const updateDocument = async (req, res) => {
+  try {
+    const { filename, tags } = req.body;
+
+    if (!filename || !tags) {
+      return res
+        .status(400)
+        .json({ message: "Filename and tags are required" });
+    }
+
+    // Ensure tags is an array
+    let tagsArray;
+    try {
+      tagsArray = JSON.parse(tags); // Parse tags if it's a JSON string
+    } catch (error) {
+      return res
+        .status(400)
+        .json({ message: "Tags must be a valid JSON array" });
+    }
+
+    if (!Array.isArray(tagsArray)) {
+      return res.status(400).json({ message: "Tags must be an array" });
+    }
+
+    const fieldsUpdated = await knex("documents") // Update the document with the specified ID using the provided fields
+      .where({ id: req.params.id })
+      .update(req.body);
+
+    // Check if the document was found and updated
+    if (fieldsUpdated === 0) {
+      return res.status(404).json({
+        message: `Document with ID ${req.params.id} not found or no changes made`,
+      });
+    }
+
+    const updatedDocument = await knex("documents") // Fetch the updated document from the database
+      .where({
+        id: req.params.id,
+      })
+      .first(); // use first to return updated document directly
+
+    res.status(200).json(updatedDocument); // Send the updated document as JSON response
+  } catch (error) {
+    res.status(500).json({
+      message: `Unable to update document with ID ${req.params.id}: ${error}`, // Send error response if there's an issue
+    });
+  }
+};
+
+// DELETE a document by ID
 const deleteDocument = async (req, res) => {
   try {
     const deleted = await knex("documents")
       .where({ id: req.params.id })
       .delete(); // Delete the document with the specified ID from the database
 
-    if (!deleted) {
+    if (deleted === 0) {
       return res.status(404).json({
         message: `Document with ID ${req.params.id} not found`, // Check if the document was found and deleted
       });
@@ -88,4 +159,4 @@ const deleteDocument = async (req, res) => {
     });
   }
 };
-export { index, findDocument, addDocument, deleteDocument };
+export { index, findDocument, addDocument, deleteDocument, updateDocument };
