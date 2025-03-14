@@ -1,6 +1,6 @@
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import multer from "multer"; // Middleware for handling file uploadsin Node.js
+import path from "path"; // Helps manage file paths (works across different OS)
+import fs from "fs"; // File system module (used here to check/create directories)
 
 // Multer configuration
 const storage = multer.diskStorage({

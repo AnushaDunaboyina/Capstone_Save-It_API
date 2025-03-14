@@ -59,7 +59,7 @@ const addDocument = async (req, res) => {
         .status(400)
         .json({ message: "Tags must be a valid JSON array" });
     }
-    if (!Array.isArray(tags)) {
+    if (!Array.isArray(tagaArray)) {
       return res.status(400).json({ message: "Tags must be an array" });
     }
 
@@ -75,11 +75,12 @@ const addDocument = async (req, res) => {
     const result = await knex("documents").insert(newDocument); // Insert the new document into the database and get the inserted ID
     const newDocumentId = result[0];
 
+    // Retrieve and send the created document
     const createdDocument = await knex("documents")
       .where({ id: newDocumentId })
       .first();
 
-    res.status(201).json(createdDocument); // Send the created document as JSON response
+    res.status(201).json({ message: "File uploaded successfully", createdDocument }); // Send the created document as JSON response
   } catch (error) {
     res.status(500).json({
       message: `Unable to add new document: ${error}`, // Send error response if there's an issue
