@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import "dotenv/config";
 import upload from './middlewares/multerConfig.js';
 import documentRoutes from './routes/documents-routes.js';
 
@@ -8,7 +9,7 @@ const PORT = process.env.PORT || 5050;
 
 // Middleware setup
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // Allows Express to parse incoming JSON data in req.body (important for APIs handling JSON requests).
 
 // Multer middleware for file upload
 app.use('/api/documents', upload.single('file'), (req, res, next) => {
