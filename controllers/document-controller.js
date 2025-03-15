@@ -59,7 +59,7 @@ const addDocument = async (req, res) => {
         .status(400)
         .json({ message: "Tags must be a valid JSON array" });
     }
-    if (!Array.isArray(tagaArray)) {
+    if (!Array.isArray(tagsArray)) {
       return res.status(400).json({ message: "Tags must be an array" });
     }
 
