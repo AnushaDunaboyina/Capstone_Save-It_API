@@ -50,16 +50,42 @@ const addDocument = async (req, res) => {
       });
     }
 
+    // Check if the filename already exists
+    const existingFilename = await knex("documents")
+      .where({ filename })
+      .first();
+    if (existingFilename) {
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("Failed to delete file:", err);
+        }
+      });
+      return res.status(400).json({
+        message: `A document with the filename "${filename}" already exists. Please choose a different name.`,
+      });
+    }
+
     // Ensure tags is an array
     let tagsArray;
     try {
       tagsArray = JSON.parse(tags); // Parse tags if it's a JSON string
+      console.log("Parsed Tags Array:", tagsArray);
     } catch (error) {
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("Failed to delete file:", err);
+        }
+      });
       return res
         .status(400)
         .json({ message: "Tags must be a valid JSON array" });
     }
     if (!Array.isArray(tagsArray)) {
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("Failed to delete file:", err);
+        }
+      });
       return res.status(400).json({ message: "Tags must be an array" });
     }
 
@@ -67,12 +93,14 @@ const addDocument = async (req, res) => {
     const newDocument = {
       filename,
       filepath: file.path,
-      // tags: JSON.stringify(tags),
-      tags: tagsArray, // Store tags as an array
+      tags: JSON.stringify(tagsArray), // Store tags as an array
       createdAt: new Date(),
     };
 
+    console.log("New Document Object:", newDocument);
+
     const result = await knex("documents").insert(newDocument); // Insert the new document into the database and get the inserted ID
+    console.log("Insert Result:", result);
     const newDocumentId = result[0];
 
     // Retrieve and send the created document
@@ -80,11 +108,20 @@ const addDocument = async (req, res) => {
       .where({ id: newDocumentId })
       .first();
 
-    res.status(201).json({ message: "File uploaded successfully", createdDocument }); // Send the created document as JSON response
+    res
+      .status(201)
+      .json({ message: "File uploaded successfully", createdDocument }); // Send the created document as JSON response
   } catch (error) {
-    res.status(500).json({
-      message: `Unable to add new document: ${error}`, // Send error response if there's an issue
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        console.error("Failed to delete file:", err);
+      }
     });
+    res.status(500).json({
+      message: "Unable to add new document:",
+      error: error.message, // Send error response if there's an issue
+    });
+    console.error("Error in addDocument:", error);
   }
 };
 
