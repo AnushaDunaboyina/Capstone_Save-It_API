@@ -44,10 +44,20 @@ const addDocument = async (req, res) => {
     const file = req.file; // Get the uploaded file from the request
     const { filename, tags } = req.body;
 
-    if (!file || !filename || !tags) {
+    if (!filename || filename.trim() === "") {
+      return res.status(400).json({ message: "Filename cannot be empty. Please provide valid name."})
+    }
+
+    if (!file) {
       return res.status(400).json({
-        message: "All fields are required (File, Filename, and Tags)",
+        message: "All fields are required.",
       });
+    }
+
+    if (!tags, tags.trim() === "") {
+      return res.status(400).json({
+        message: "Tags cannot be empty or contain spaces. Please provide valid tags."
+      })
     }
 
     // Check if the filename already exists
