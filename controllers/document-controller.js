@@ -77,6 +77,7 @@ const addDocument = async (req, res) => {
     const fileExtension = path.extname(file.originalname);
 
     // Define the new path
+    const publicUrl = `/uploads-documents/${sanitizedFilename}${fileExtension}`;
     const newPath = path.join(
       "C:",
       "Users",
@@ -108,7 +109,7 @@ const addDocument = async (req, res) => {
     // Create a new document object with file details
     const newDocument = {
       filename: sanitizedFilename,
-      filepath: newPath,
+      filepath: publicUrl, // Store the public URL
       tags: JSON.stringify(tagsArray), // Store tags as an array
       createdAt: new Date(),
     };

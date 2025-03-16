@@ -2,11 +2,27 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import multer from "multer";
+import path from "path";
 
 import documentRoutes from "./routes/documents-routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5050;
+
+// Serve static files from the uploads-documents directory
+app.use(
+  "/uploads-documents",
+  express.static(
+    path.join(
+      "C:",
+      "Users",
+      "vikas",
+      "OneDrive",
+      "Desktop",
+      "uploads-documents"
+    )
+  )
+);
 
 // Middleware setup
 app.use(cors());
