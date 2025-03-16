@@ -222,4 +222,28 @@ const deleteDocument = async (req, res) => {
     });
   }
 };
-export { index, findDocument, addDocument, deleteDocument, updateDocument };
+
+// Search documents by name or tags
+const searchDocuments = async (req, res) => {
+  const { query } = req.query;
+
+  try {
+    const results = await knex("documents")
+      .where("filename", "like", `%${query}%`)
+      .orWhere("tags", "like", `%{query}%`);
+    res.status(200).json(results);
+  } catch (error) {
+    res.status(500).json({
+      message: `Error searching documents: ${error.message}`,
+    });
+  }
+};
+
+export {
+  index,
+  findDocument,
+  addDocument,
+  deleteDocument,
+  updateDocument,
+  searchDocuments,
+};

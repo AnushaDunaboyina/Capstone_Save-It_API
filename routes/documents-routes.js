@@ -11,8 +11,13 @@ router.post(
   documentController.addDocument
 );
 
+// Route to get all documents
 router.route("/").get(documentController.index);
 
+// Route to search documents
+router.get("/search", documentController.searchDocuments);
+
+// Routes to get, update, and delete a single document
 router
   .route("/:id")
   .get(documentController.findDocument)
