@@ -12,7 +12,12 @@ const knex = initKnex(configuration);
 // Get all documents
 const index = async (req, res) => {
   try {
-    const data = await knex("documents"); // Fetch all documents from the database
+    const data = await knex("documents").select(
+      "id",
+      "filename",
+      "filepath",
+      knex.raw("JSON_UNQUOTE(JSON_EXTRACT(tags, '$')) as tags")
+    ); // Fetch all documents from the database
 
     res.status(200).json(data); // Send the fetched documents as JSON response
   } catch (error) {
@@ -229,8 +234,15 @@ const searchDocuments = async (req, res) => {
 
   try {
     const results = await knex("documents")
+      .select(
+        "id",
+        "filename",
+        "filepath",
+        knex.raw("JSON_UNQUOTE(JSON_EXTRACT(tags, '$')) as tags") // Normalized tags for search
+      )
       .where("filename", "like", `%${query}%`)
-      .orWhere("tags", "like", `%{query}%`);
+      .orWhereRaw("JSON_CONTAINS(tags, ?)", [`"${query}"`]); // Search for tags in the JSON array
+    console.log("Search results:", results);
     res.status(200).json(results);
   } catch (error) {
     res.status(500).json({
