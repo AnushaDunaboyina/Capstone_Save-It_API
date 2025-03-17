@@ -2,10 +2,15 @@ import initKnex from "knex";
 import configuration from "../knexfile.js";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import {
   parseAndValidateTags,
   safelyDeleteFile,
 } from "../helpers/tagHelper.js";
+
+// Define __dirname for ES module compatibility
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const knex = initKnex(configuration);
 
@@ -16,10 +21,21 @@ const index = async (req, res) => {
       "id",
       "filename",
       "filepath",
+      "createdAt",
       knex.raw("JSON_UNQUOTE(JSON_EXTRACT(tags, '$')) as tags")
     ); // Fetch all documents from the database
 
-    res.status(200).json(data); // Send the fetched documents as JSON response
+    // Normalize filepaths to ensure they are relative public URLs
+    const normalizedData = data.map((doc) => {
+      if (!doc.filepath.startsWith("/uploads-documents/")) {
+        // Convert absolute paths to relative URLs
+        const filename = path.basename(doc.filepath); // Extract the file name
+        doc.filepath = `/uploads-documents/${filename}`;
+      }
+      return doc;
+    });
+
+    res.status(200).json(normalizedData); // Send the fetched documents as JSON response
   } catch (error) {
     res.status(500).send(`Error retrieving documents: ${error}`); // Send eror response if there's an issue
   }
@@ -83,15 +99,14 @@ const addDocument = async (req, res) => {
 
     // Define the new path
     const publicUrl = `/uploads-documents/${sanitizedFilename}${fileExtension}`;
+    console.log("Public URL for preview:", publicUrl);
     const newPath = path.join(
-      "C:",
-      "Users",
-      "vikas",
-      "OneDrive",
-      "Desktop",
-      "uploads-documents",
+      __dirname,
+      "../uploads-documents",
       `${sanitizedFilename}${fileExtension}`
     );
+    console.log("Uploaded file:", file);
+    console.log("Saving file to:", newPath);
 
     // Check for filename conflict and inform the user
     if (fs.existsSync(newPath)) {
@@ -240,8 +255,8 @@ const searchDocuments = async (req, res) => {
         "filepath",
         knex.raw("JSON_UNQUOTE(JSON_EXTRACT(tags, '$')) as tags") // Normalized tags for search
       )
-      .where("filename", "like", `%${query}%`)
-      .orWhereRaw("JSON_CONTAINS(tags, ?)", [`"${query}"`]); // Search for tags in the JSON array
+      .where("filename", "like", `%${query}%`) // Matches partial filname
+      .orWhereRaw("JSON_CONTAINS(tags, ?)", [`"${query}"`]); // Search for query/tag in the tags array
     console.log("Search results:", results);
     res.status(200).json(results);
   } catch (error) {

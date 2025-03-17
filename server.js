@@ -3,31 +3,37 @@ import cors from "cors";
 import "dotenv/config";
 import multer from "multer";
 import path from "path";
+import { fileURLToPath } from "url";
 
 import documentRoutes from "./routes/documents-routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5050;
 
-// Serve static files from the uploads-documents directory
-app.use(
-  "/uploads-documents",
-  express.static(
-    path.join(
-      "C:",
-      "Users",
-      "vikas",
-      "OneDrive",
-      "Desktop",
-      "uploads-documents"
-    )
-  )
-);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Middleware setup
 app.use(cors());
 app.use(express.json()); // Allows Express to parse incoming JSON data in req.body (important for APIs handling JSON requests).
 app.use(express.urlencoded({ extended: true })); // Parse form data (important for req.body)
+
+// Serve static files from the uploads-documents directory
+app.use(
+  "/uploads-documents",
+  (req, res, next) => {
+    console.log(`Static request for: ${req.path}`);
+    const resolvedPath = path.join(__dirname, "/uploads-documents", req.path);
+    console.log(`Resolved file path: ${resolvedPath}`);
+    next();
+  },
+  express.static(path.join(__dirname, "/uploads-documents"))
+);
+
+console.log(
+  "Serving static files from:",
+  path.join(__dirname, "/uploads-documents")
+);
 
 app.use("/api/documents", documentRoutes);
 
