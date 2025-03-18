@@ -1,7 +1,7 @@
 import fs from "fs";
 import knexConfig from "../knexfile.js";
 import knexModule from "knex";
-import { format } from 'date-fns';  // Importing date-fns to format dates easily
+import { format } from 'date-fns';
 
 const knex = knexModule(knexConfig);
 
@@ -19,15 +19,17 @@ export default async function DocumentsToSeedFile() {
     const documents = await knex("documents").select("*");
     console.log("Documents fetched:", documents);
 
-    // Adjust the format for tags and createdAt
+    // Adjust the format for tags, createdAt, and file paths
     const formattedDocuments = documents.map((doc) => {
       // Format createdAt to match "YYYY-MM-DD HH:mm:ss" format
       const formattedCreatedAt = format(new Date(doc.createdAt), 'yyyy-MM-dd HH:mm:ss');
 
       return {
         ...doc,
-        createdAt: formattedCreatedAt,
-        tags: doc.tags,  // Ensure tags is in the correct format as a JSON string
+        createdAt: formattedCreatedAt, // Ensure consistent date formatting
+        // No need to parse tags as they are already in array format
+        tags: doc.tags, 
+        filepath: doc.filepath, // Keep the relative static path
       };
     });
 
@@ -45,6 +47,7 @@ export async function seed(knex) {
 
     console.log("Generated seed data:\n", seedData);
 
+    // Write to seed_documents.js file
     fs.writeFileSync("./seeds/seed_documents.js", seedData, "utf-8");
     console.log("✅ Seed file updated successfully!");
   } catch (error) {
