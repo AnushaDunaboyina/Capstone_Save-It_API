@@ -40,21 +40,27 @@ const addLink = async (req, res) => {
     const trimmedUrl = url.trim();
     const trimmedDescription = description.trim();
     const trimmedThumbnail = thumbnail.trim();
-    const trimmedTags = tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag !== "");
+    const trimmedTags = Array.isArray(tags)
+      ? tags.map((tag) => tag.trim()).filter(Boolean)
+      : tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean);
 
     if (
       !trimmedTitle ||
       !trimmedUrl ||
       !trimmedDescription ||
-      !trimmedThumbnail | !trimmedTags
+      !trimmedThumbnail ||
+      trimmedTags.length === 0
     ) {
       return res.status(400).json({ error: "All fields must me filled." });
     }
 
-    if (!validator.isURL(trimmedUrl)) {
+    if (
+      !validator.isURL(trimmedUrl) ||
+      !/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmedUrl)
+    ) {
       return res.status(400).json({ error: "Invalid url format." });
     }
 
@@ -102,32 +108,38 @@ const updateLink = async (req, res) => {
     const trimmedUrl = url.trim();
     const trimmedDescription = description.trim();
     const trimmedThumbnail = thumbnail.trim();
-    const trimmedTags = tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag !== "");
+    const trimmedTags = Array.isArray(tags)
+      ? tags.map((tag) => tag.trim()).filter(Boolean)
+      : tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean);
 
     if (
       !trimmedTitle ||
       !trimmedUrl ||
       !trimmedDescription ||
-      !trimmedThumbnail | !trimmedTags
+      !trimmedThumbnail ||
+      trimmedTags.length === 0
     ) {
-      return res.status(400).json({ error: "All fields must me filled." });
+      return res.status(400).json({ error: "All fields must be filled." });
     }
 
-    if (!validator.isURL(trimmedUrl)) {
+    if (
+      !validator.isURL(trimmedUrl) ||
+      !/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmedUrl)
+    ) {
       return res.status(400).json({ error: "Invalid url format." });
     }
 
-    if (!Array.isArray(tags) || tags.some((tag) => tag.trim() === "")) {
+    if (!Array.isArray(trimmedTags) || trimmedTags.length === 0) {
       return res
         .status(400)
-        .json({ error: "Tags must be a non-empty array of string." });
+        .json({ error: "Tags must be a non-empty array of strings." });
     }
 
     const existingUrl = await knex("links").where({ url: trimmedUrl }).first();
-    if (existingUrl) {
+    if (existingUrl && existingUrl.id !== Number(id)) {
       return res.status(400).json({ error: "This link already exist." });
     }
 
@@ -139,13 +151,13 @@ const updateLink = async (req, res) => {
     const existingTitle = await knex("links")
       .where({ title: trimmedTitle })
       .first();
-    if (existingTitle) {
+    if (existingTitle && existingTitle.id !== Number(id)) {
       return res.status(400).json({
         error: "This title already exists. Please choose a different title",
       });
     }
 
-    const fieldsUpdated = await knex("links")
+    await knex("links")
       .where({ id })
       .update({
         url: trimmedUrl,
@@ -155,24 +167,49 @@ const updateLink = async (req, res) => {
         tags: JSON.stringify(trimmedTags),
       });
 
-      res.status(200).json({ message: "Link updated successfuly."})
+    res.status(200).json({ message: "Link updated successfuly." });
   } catch (err) {
-    res.status(500).json({ Error: "Failed to update the link."})
+    res.status(500).json({ error: "Failed to update the link." });
   }
 };
 
 // Delete a link by ID (DELETE)
 const deleteLink = async (req, res) => {
-  try{
+  try {
+    const rowsDeleted = await knex("links")
+      .where({ id: req.params.id })
+      .delete();
 
-    const { id } = req.params;
+    if (rowsDeleted === 0) {
+      return res
+        .status(404)
+        .json({ message: `Link with ID ${req.params.id} not found` });
+    }
 
-    const linkToDelete = await knex("links").where({ id }).first();
-    res.status(200).json();
+    // No Content response
+    res.sendStatus(204);
   } catch (err) {
-
+    res.status(500).json({
+      error: `Unable to delete link: ${err}`,
+    });
   }
-  
 };
 
-export { index, addLink, updateLink, deleteLink };
+// Find a link by ID (GET)
+const findLinkById = async (req, res) => {
+  try {
+    const { id } = req.params; // Get the ID from the URL parameters
+
+    const link = await knex("links").where({ id }).first(); // Find the link by its ID
+
+    if (!link) {
+      return res.status(404).json({ error: "Link not found." }); // If no link is found, return a 404 error
+    }
+
+    res.status(200).json(link); // Return the found link
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch link." }); // Handle any errors during the process
+  }
+};
+
+export { index, addLink, updateLink, deleteLink, findLinkById };

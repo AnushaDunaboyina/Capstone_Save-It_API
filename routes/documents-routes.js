@@ -5,11 +5,7 @@ import upload from "../middlewares/multerConfig.js";
 const router = express.Router();
 
 // POST route to handle file uploads
-router.post(
-  "/upload",
-  upload.single("file"), 
-  documentController.addDocument
-);
+router.post("/upload", upload.single("file"), documentController.addDocument);
 
 // Route to get all documents
 router.route("/").get(documentController.index);
@@ -23,5 +19,6 @@ router
   .get(documentController.findDocument)
   .patch(documentController.updateDocument)
   .delete(documentController.deleteDocument);
+
 
 export default router;

@@ -6,6 +6,7 @@ router.route("/").get(linkController.index).post(linkController.addLink);
 
 router
   .route("/:id")
+  .get(linkController.findLinkById)
   .patch(linkController.updateLink)
   .delete(linkController.deleteLink);
 

@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 
 import documentRoutes from "./routes/documents-routes.js";
+import linkRoutes from "./routes/links-routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -44,6 +45,8 @@ console.log(
 );
 
 app.use("/api/documents", documentRoutes);
+
+app.use("/api/links", linkRoutes);
 
 // Default route
 app.get("/", (_req, res) => {
