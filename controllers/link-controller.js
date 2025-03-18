@@ -3,7 +3,7 @@ import configuration from "../knexfile.js";
 const knex = initKnex(configuration);
 import validator from "validator";
 
-// Get all links || Search and filtering
+// Get all links (GET) || Search and filtering
 const index = async (req, res) => {
   try {
     const { search, tags } = req.query;
@@ -30,7 +30,7 @@ const index = async (req, res) => {
   }
 };
 
-// Post or Add new Link
+// ADD a new Link (POST)
 
 const addLink = async (req, res) => {
   try {
@@ -92,7 +92,7 @@ const addLink = async (req, res) => {
   }
 };
 
-// Edit / Patch Link
+// Edit or Update a link by ID (PATCH)
 const updateLink = async (req, res) => {
   try {
     const { id } = req.params;
@@ -161,8 +161,18 @@ const updateLink = async (req, res) => {
   }
 };
 
-const deleteLink = (req, res) => {
-  res.status(200).send();
+// Delete a link by ID (DELETE)
+const deleteLink = async (req, res) => {
+  try{
+
+    const { id } = req.params;
+
+    const linkToDelete = await knex("links").where({ id }).first();
+    res.status(200).json();
+  } catch (err) {
+
+  }
+  
 };
 
-export { index, addLink, deleteLink };
+export { index, addLink, updateLink, deleteLink };

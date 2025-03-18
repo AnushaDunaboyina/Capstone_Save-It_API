@@ -3,37 +3,32 @@
  * @returns { Promise<void> }
  */
 export async function seed(knex) {
-  // Deletes ALL existing entries
-  await knex("links").del();
-
   // Inserts seed entries
   await knex("links").insert([
     {
-      id: 1,
-      url: "http://roadmap.sh/",
-      title: "Developer Roadmaps",
-      description: "Curated roadmaps for developers to follow.",
-      thumbnail: "http://roadmap.sh/thumbnail.jpg",
-      tags: knex.raw('?', [JSON.stringify(["development", "roadmap"])]), // Explicitly convert to JSON
-      createdAt: "2025-03-11 10:00:00",
+      url: "https://www.mountaingoatsoftware.com/agile/user-stories",
+      title: "Mountain Goat Software - User Stories",
+      description: "An explanation of user stories in agile development.",
+      thumbnail: "https://www.mountaingoatsoftware.com/thumbnail.jpg",
+      tags: knex.raw("?", [JSON.stringify(["agile", "user-stories"])]),
+      createdAt: "2025-03-17 16:00:00",
     },
     {
-      id: 2,
-      url: "https://fonts.google.com/",
-      title: "Google Fonts",
-      description: "Free licensed font families.",
-      thumbnail: "https://fonts.google.com/thumbnail.jpg",
-      tags: knex.raw('?', [JSON.stringify(["design", "fonts"])]), // Explicitly convert to JSON
-      createdAt: "2025-03-12 11:00:00",
+      url: "https://coolors.co/",
+      title: "Coolors",
+      description: "Generate perfect color combinations.",
+      thumbnail: "https://coolors.co/thumbnail.jpg",
+      tags: knex.raw("?", [JSON.stringify(["design", "colors"])]),
+      createdAt: "2025-03-18 17:00:00",
     },
     {
-      id: 3,
-      url: "https://colorhunt.co/palette/",
-      title: "Color Hunt Palette",
-      description: "Free color palettes for designers and artists.",
-      thumbnail: "https://colorhunt.co/thumbnail.jpg",
-      tags: knex.raw('?', [JSON.stringify(["design", "colors"])]), // Explicitly convert to JSON
-      createdAt: "2025-03-13 12:00:00",
+      url: "https://unsplash.com/",
+      title: "Unsplash",
+      description:
+        "Beautiful, free images and photos that you can download and use for any project.",
+      thumbnail: "https://unsplash.com/thumbnail.jpg",
+      tags: knex.raw("?", [JSON.stringify(["images", "photos"])]),
+      createdAt: "2025-03-19 18:00:00",
     },
   ]);
 }
