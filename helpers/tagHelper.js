@@ -3,15 +3,21 @@ import fs from "fs";
 // parse and validate tags
 export const parseAndValidateTags = (tags) => {
   try {
-    console.log("Raw tags input:", tags);
-    const tagsArray = JSON.parse(tags).map((tag) => tag.trim());
-    console.log("Parsed and trimmed tags:", tagsArray);
-
-    if (!Array.isArray(tagsArray)) {
-      throw new Error("Tags must be an array.");
+    // Handle arrays directly
+    if (Array.isArray(tags)) {
+      return tags.map((tag) => tag.trim());
     }
+
+    // Parse JSON strings
+    const tagsArray = JSON.parse(tags).map((tag) => tag.trim());
+
+    // if (!Array.isArray(tagsArray)) {
+    //   throw new Error("Tags must be an array.");
+    // }
+    console.log("Parsed and trimmed tags:", tagsArray);
     return tagsArray;
   } catch (error) {
+    console.error("Error in parseAndValidateTags:", error.message);
     throw new Error("Tags must be a valid JSON array.");
   }
 };

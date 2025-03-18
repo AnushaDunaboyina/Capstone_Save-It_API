@@ -15,8 +15,8 @@ const __dirname = path.dirname(__filename);
 
 // Middleware setup
 app.use(cors());
-app.use(express.json()); // Allows Express to parse incoming JSON data in req.body (important for APIs handling JSON requests).
-app.use(express.urlencoded({ extended: true })); // Parse form data (important for req.body)
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true })); 
 
 // Serve static files from the uploads-documents directory
 app.use(

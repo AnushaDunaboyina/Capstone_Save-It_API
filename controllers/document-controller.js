@@ -161,23 +161,43 @@ const updateDocument = async (req, res) => {
   try {
     const { filename, tags } = req.body;
 
+    // Log the entire request payload
+    console.log("Received payload in updateDocument:", req.body);
+
+    // Log details about the tags field
+    if (tags) {
+      console.log("Type of tags:", typeof tags);
+      console.log("Tags content:", tags);
+    }
+
     // Validate filename and tags
     if (!filename || filename.trim() === "") {
       return res.status(400).json({ message: "Filename is required." });
     }
 
-    if (!tags || tags.trim() === "") {
-      return res.status(400).json({ message: "Tags are required." });
-    }
-
-    // Parse and validate tags using tagHelper.js
+    // Handle both array and JSON string formats for tags
     let tagsArray;
-    try {
-      tagsArray = parseAndValidateTags(tags); // Use the helper function
-    } catch (error) {
-      return res.status(400).json({ message: error.message }); // Return any validation errors
+    if (Array.isArray(tags)) {
+      // Tags already in array format
+      tagsArray = tags.map((tag) => tag.trim());
+    } else if (typeof tags === "string") {
+      try {
+        tagsArray = parseAndValidateTags(tags); // Parse JSON string
+      } catch (error) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "Invalid tags format. Tags must be a JSON array or string.",
+          });
+      }
+    } else {
+      return res
+        .status(400)
+        .json({ message: "Tags must be a JSON string or an array." });
     }
 
+    console.log("Parsed tags:", tagsArray);
     // Update the document in the database
     const fieldsUpdated = await knex("documents")
       .where({ id: req.params.id })
@@ -200,6 +220,7 @@ const updateDocument = async (req, res) => {
 
     res.status(200).json(updatedDocument); // Send the updated document as response
   } catch (error) {
+    console.error(`Error updating document ID ${req.params.id}:`, error);
     res.status(500).json({
       message: `Unable to update document with ID ${req.params.id}`,
       error: error.message,

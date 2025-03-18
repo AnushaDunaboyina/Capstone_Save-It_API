@@ -7,7 +7,7 @@ const router = express.Router();
 // POST route to handle file uploads
 router.post(
   "/upload",
-  upload.single("file"), // Process file upload first
+  upload.single("file"), 
   documentController.addDocument
 );
 
