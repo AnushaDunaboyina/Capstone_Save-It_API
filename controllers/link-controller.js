@@ -14,7 +14,8 @@ const index = async (req, res) => {
       query = query
         .where("title", "like", `%${search}%`)
         .orWhere("description", "like", `%${search}%`)
-        .orWhere("thumbnail", "like", `%${search}%`);
+        .orWhere("thumbnail", "like", `%${search}%`)
+        .orWhereRaw("JSON_CONTAINS(tags, ?)", [JSON.stringify([search])]);
     }
 
     if (tags) {
@@ -103,11 +104,6 @@ const updateLink = async (req, res) => {
   try {
     const { id } = req.params;
     const { url, title, description, thumbnail, tags } = req.body;
-
-    // const trimmedTitle = title.trim();
-    // const trimmedUrl = url.trim();
-    // const trimmedDescription = description.trim();
-    // const trimmedThumbnail = thumbnail.trim();
 
     const trimmedTitle = title ? title.trim() : "";
     const trimmedUrl = url ? url.trim() : "";

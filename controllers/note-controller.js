@@ -6,12 +6,14 @@ import axios from "axios";
 // Get all notes (GET) || Search and filtering
 const index = async (req, res) => {
   try {
-    const { title, tags } = req.query;
+    const { search, tags } = req.query;
 
     let query = knex("notes");
 
-    if (title) {
-      query = query.where("title", "like", `%${title}%`);
+    if (search) {
+      query = query
+        .where("title", "like", `%${search}%`)
+        .orWhereRaw("JSON_CONTAINS(tags, ?)", [JSON.stringify([search])]);
     }
 
     if (tags) {
@@ -203,11 +205,9 @@ const processWithAIUsingPrompt = async (req, res) => {
     );
 
     const result = response.data;
-    res
-      .status(200)
-      .json({
-        processedContent: response.data.candidates[0].content.parts[0].text,
-      });
+    res.status(200).json({
+      processedContent: response.data.candidates[0].content.parts[0].text,
+    });
   } catch (error) {
     console.error("Error processing content:", error.message);
     res.status(500).json({ error: "Failed to process content." });
