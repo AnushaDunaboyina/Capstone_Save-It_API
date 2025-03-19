@@ -104,16 +104,23 @@ const updateLink = async (req, res) => {
     const { id } = req.params;
     const { url, title, description, thumbnail, tags } = req.body;
 
-    const trimmedTitle = title.trim();
-    const trimmedUrl = url.trim();
-    const trimmedDescription = description.trim();
-    const trimmedThumbnail = thumbnail.trim();
+    // const trimmedTitle = title.trim();
+    // const trimmedUrl = url.trim();
+    // const trimmedDescription = description.trim();
+    // const trimmedThumbnail = thumbnail.trim();
+
+    const trimmedTitle = title ? title.trim() : "";
+    const trimmedUrl = url ? url.trim() : "";
+    const trimmedDescription = description ? description.trim() : "";
+    const trimmedThumbnail = thumbnail ? thumbnail.trim() : "";
     const trimmedTags = Array.isArray(tags)
       ? tags.map((tag) => tag.trim()).filter(Boolean)
       : tags
           .split(",")
           .map((tag) => tag.trim())
           .filter(Boolean);
+
+    const updatedTags = JSON.stringify(trimmedTags);
 
     if (
       !trimmedTitle ||
@@ -148,6 +155,13 @@ const updateLink = async (req, res) => {
       return res.status(400).json({ error: "Link not found" });
     }
 
+    console.log("Updating link:", {
+      id,
+      trimmedUrl,
+      trimmedTitle,
+      trimmedTags,
+    });
+
     const existingTitle = await knex("links")
       .where({ title: trimmedTitle })
       .first();
@@ -157,19 +171,20 @@ const updateLink = async (req, res) => {
       });
     }
 
-    await knex("links")
-      .where({ id })
-      .update({
-        url: trimmedUrl,
-        title: trimmedTitle,
-        description: trimmedDescription,
-        thumbnail: trimmedThumbnail,
-        tags: JSON.stringify(trimmedTags),
-      });
+    await knex("links").where({ id }).update({
+      url: trimmedUrl,
+      title: trimmedTitle,
+      description: trimmedDescription,
+      thumbnail: trimmedThumbnail,
+      tags: updatedTags,
+    });
 
     res.status(200).json({ message: "Link updated successfuly." });
   } catch (err) {
-    res.status(500).json({ error: "Failed to update the link." });
+    console.error("Database update error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to update the link.", details: err.message });
   }
 };
 
