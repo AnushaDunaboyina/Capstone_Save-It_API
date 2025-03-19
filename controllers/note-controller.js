@@ -19,6 +19,7 @@ const index = async (req, res) => {
       ]);
     }
 
+    // const notes = await query.select("id", "title", "content", "tags", "color", "createdAt"); // Include the color field
     const notes = await query;
     res.status(200).json(notes);
   } catch (err) {
@@ -30,12 +31,11 @@ const index = async (req, res) => {
 
 const addNote = async (req, res) => {
   try {
-    const { title, content, tags } = req.body;
+    const { title, content, tags, color } = req.body;
 
     const trimmedTitle = title.trim();
-
     const trimmedContent = content.trim();
-
+    const noteColor = color?.trim() || "white";
     const trimmedTags = Array.isArray(tags)
       ? tags.map((tag) => tag.trim()).filter(Boolean)
       : tags
@@ -65,7 +65,7 @@ const addNote = async (req, res) => {
     const [id] = await knex("notes").insert({
       title: trimmedTitle,
       content: trimmedContent,
-
+      color: noteColor,
       tags: JSON.stringify(trimmedTags),
     });
 
@@ -81,15 +81,9 @@ const updateNote = async (req, res) => {
     const { id } = req.params;
     const { title, content, tags } = req.body;
 
-    // const trimmedTitle = title.trim();
-    // const trimmedUrl = url.trim();
-    // const trimmedDescription = description.trim();
-    // const trimmedThumbnail = thumbnail.trim();
-
     const trimmedTitle = title ? title.trim() : "";
-
     const trimmedContent = content ? content.trim() : "";
-
+    const noteColor = color?.trim();
     const trimmedTags = Array.isArray(tags)
       ? tags.map((tag) => tag.trim()).filter(Boolean)
       : tags
@@ -109,13 +103,6 @@ const updateNote = async (req, res) => {
         .json({ error: "Tags must be a non-empty array of strings." });
     }
 
-    console.log("Updating note:", {
-      id,
-
-      trimmedTitle,
-      trimmedTags,
-    });
-
     const existingTitle = await knex("notes")
       .where({ title: trimmedTitle })
       .first();
@@ -128,7 +115,7 @@ const updateNote = async (req, res) => {
     await knex("notes").where({ id }).update({
       title: trimmedTitle,
       content: trimmedContent,
-
+      color: noteColor,
       tags: updatedTags,
     });
 
@@ -180,4 +167,40 @@ const findNoteById = async (req, res) => {
   }
 };
 
-export { index, addNote, updateNote, deleteNote, findNoteById };
+// AI-Powered Grammar Correction or Summarization (POST)
+const processNoteWithAI = async (req, res) => {
+  try {
+    const { content, operation } = req.body;
+
+    // Validate input
+    if (!content || !operation) {
+      return res.status(400).json({ error: "Content and operation are required." });
+    }
+
+    // Call GeminiAI API
+    const response = await axios.post(
+      "https://gemini-ai-api-endpoint", // Replace with the actual API endpoint
+      {
+        text: content, // Send the note content
+        operation: operation, // Operation: "grammar_correction" or "summarize"
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GEMINI_AI_API_KEY}`, // Use the API key
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    // Extract the processed content from the API response
+    const processedContent = response.data.result;
+
+    // Send back the processed content to the client
+    res.status(200).json({ processedContent });
+  } catch (error) {
+    console.error("Error processing note with AI:", error.message);
+    res.status(500).json({ error: "Failed to process note with AI." });
+  }
+};
+
+export { index, addNote, updateNote, deleteNote, findNoteById, processNoteWithAI };

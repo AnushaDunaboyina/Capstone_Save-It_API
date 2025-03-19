@@ -9,5 +9,8 @@ router
   .get(noteController.findNoteById)
   .patch(noteController.updateNote)
   .delete(noteController.deleteNote);
+
+  // Add the AI processing route
+router.post("/process-ai", noteController.processNoteWithAI);
   
 export default router;
