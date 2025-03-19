@@ -32,9 +32,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   "/uploads-documents",
   (req, res, next) => {
-    console.log(`Static request for: ${req.path}`);
+    
     const resolvedPath = path.join(__dirname, "/uploads-documents", req.path);
-    console.log(`Resolved file path: ${resolvedPath}`);
+    
     next();
   },
   express.static(path.join(__dirname, "/uploads-documents"))

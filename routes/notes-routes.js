@@ -11,6 +11,6 @@ router
   .delete(noteController.deleteNote);
 
   // Add the AI processing route
-router.post("/process-ai", noteController.processNoteWithAI);
+router.post("/process-ai", noteController.processWithAIUsingPrompt);
   
 export default router;

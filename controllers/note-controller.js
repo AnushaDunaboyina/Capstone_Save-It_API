@@ -1,6 +1,7 @@
 import initKnex from "knex";
 import configuration from "../knexfile.js";
 const knex = initKnex(configuration);
+import axios from "axios";
 
 // Get all notes (GET) || Search and filtering
 const index = async (req, res) => {
@@ -79,7 +80,7 @@ const addNote = async (req, res) => {
 const updateNote = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, tags } = req.body;
+    const { title, content, tags, color } = req.body;
 
     const trimmedTitle = title ? title.trim() : "";
     const trimmedContent = content ? content.trim() : "";
@@ -168,39 +169,56 @@ const findNoteById = async (req, res) => {
 };
 
 // AI-Powered Grammar Correction or Summarization (POST)
-const processNoteWithAI = async (req, res) => {
+const processWithAIUsingPrompt = async (req, res) => {
   try {
-    const { content, operation } = req.body;
+    const { content, task } = req.body;
 
-    // Validate input
-    if (!content || !operation) {
-      return res.status(400).json({ error: "Content and operation are required." });
+    if (!content || !task) {
+      return res.status(400).json({ error: "Content and task are required." });
     }
 
-    // Call GeminiAI API
+    // Create a simple prompt based on the task
+    let prompt = "";
+    if (task === "grammar_correction") {
+      prompt = `Fix the grammar in the following text: "${content}"`;
+    } else if (task === "summarize") {
+      prompt = `Summarize the following text: "${content}"`;
+    } else {
+      return res.status(400).json({ error: "Invalid task type." });
+    }
+
+    // Call the AI API with the prompt
     const response = await axios.post(
-      "https://gemini-ai-api-endpoint", // Replace with the actual API endpoint
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_AI_API_KEY}`,
       {
-        text: content, // Send the note content
-        operation: operation, // Operation: "grammar_correction" or "summarize"
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
       },
       {
-        headers: {
-          Authorization: `Bearer ${process.env.GEMINI_AI_API_KEY}`, // Use the API key
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       }
     );
 
-    // Extract the processed content from the API response
-    const processedContent = response.data.result;
-
-    // Send back the processed content to the client
-    res.status(200).json({ processedContent });
+    const result = response.data;
+    res
+      .status(200)
+      .json({
+        processedContent: response.data.candidates[0].content.parts[0].text,
+      });
   } catch (error) {
-    console.error("Error processing note with AI:", error.message);
-    res.status(500).json({ error: "Failed to process note with AI." });
+    console.error("Error processing content:", error.message);
+    res.status(500).json({ error: "Failed to process content." });
   }
 };
 
-export { index, addNote, updateNote, deleteNote, findNoteById, processNoteWithAI };
+export {
+  index,
+  addNote,
+  updateNote,
+  deleteNote,
+  findNoteById,
+  processWithAIUsingPrompt,
+};
