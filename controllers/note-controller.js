@@ -23,12 +23,15 @@ const index = async (req, res) => {
     }
 
     // const notes = await query.select("id", "title", "content", "tags", "color", "createdAt"); // Include the color field
-    const notes = await query;
+    // const notes = await query;
 
-    // Format the createdAt field to only include the date
+    // Sort notes by createdAt in descending order
+    const notes = await query.orderBy("createdAt", "desc");
+
+    // Format the createdAt field for display (only format for frontend)
     const formattedNotes = notes.map((note) => ({
       ...note,
-      createdAt: new Date(note.createdAt).toLocaleDateString("en-US"), // Format to MM/DD/YYYY
+      displayDate: new Date(note.createdAt).toLocaleDateString("en-US"), // Display-only date format
     }));
     res.status(200).json(formattedNotes);
   } catch (err) {
@@ -188,9 +191,9 @@ const processWithAIUsingPrompt = async (req, res) => {
     // Create a simple prompt based on the task
     let prompt = "";
     if (task === "grammar_correction") {
-      prompt = `Fix the grammar in the following text: "${content}"`;
+      prompt = `Fix the grammar in the following text and format any lists using proper bullet points (•), not stars or other symbols. Provide the corrected version only. Do not include explanations or extra content: "${content}"`;
     } else if (task === "summarize") {
-      prompt = `Summarize the following text: "${content}"`;
+      prompt = `Summarize the following text in a concise manner. Provide only the summary without any additional context or explanations: "${content}"`;
     } else {
       return res.status(400).json({ error: "Invalid task type." });
     }

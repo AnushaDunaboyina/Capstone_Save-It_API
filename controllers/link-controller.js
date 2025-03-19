@@ -24,12 +24,15 @@ const index = async (req, res) => {
       ]);
     }
 
-    const links = await query;
+    // const links = await query;
 
-    // Format the createdAt field to only include the date
+    // Sort links by createdAt in descending order
+    const links = await query.orderBy("createdAt", "desc");
+
+    // Format the createdAt field for display (only format for frontend)
     const formattedLinks = links.map((link) => ({
       ...link,
-      createdAt: new Date(link.createdAt).toLocaleDateString("en-US"), // Format to MM/DD/YYYY
+      displayDate: new Date(link.createdAt).toLocaleDateString("en-US"), // Format to MM/DD/YYYY for display
     }));
     res.status(200).json(formattedLinks);
   } catch (err) {
