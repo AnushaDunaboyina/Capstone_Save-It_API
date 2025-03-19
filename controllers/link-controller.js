@@ -25,7 +25,13 @@ const index = async (req, res) => {
     }
 
     const links = await query;
-    res.status(200).json(links);
+
+    // Format the createdAt field to only include the date
+    const formattedLinks = links.map((link) => ({
+      ...link,
+      createdAt: new Date(link.createdAt).toLocaleDateString("en-US"), // Format to MM/DD/YYYY
+    }));
+    res.status(200).json(formattedLinks);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch links." });
   }

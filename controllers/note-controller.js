@@ -24,7 +24,13 @@ const index = async (req, res) => {
 
     // const notes = await query.select("id", "title", "content", "tags", "color", "createdAt"); // Include the color field
     const notes = await query;
-    res.status(200).json(notes);
+
+    // Format the createdAt field to only include the date
+    const formattedNotes = notes.map((note) => ({
+      ...note,
+      createdAt: new Date(note.createdAt).toLocaleDateString("en-US"), // Format to MM/DD/YYYY
+    }));
+    res.status(200).json(formattedNotes);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch notes." });
   }
