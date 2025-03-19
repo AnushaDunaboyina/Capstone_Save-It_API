@@ -6,6 +6,7 @@ router.route("/").get(noteController.index).post(noteController.addNote);
 
 router
   .route("/:id")
+  .get(noteController.findNoteById)
   .patch(noteController.updateNote)
   .delete(noteController.deleteNote);
   

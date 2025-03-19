@@ -8,6 +8,7 @@ import fs from "fs";
 
 import documentRoutes from "./routes/documents-routes.js";
 import linkRoutes from "./routes/links-routes.js";
+import noteRoutes from "./routes/notes-routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -47,6 +48,8 @@ console.log(
 app.use("/api/documents", documentRoutes);
 
 app.use("/api/links", linkRoutes);
+
+app.use("/api/notes", noteRoutes);
 
 // Default route
 app.get("/", (_req, res) => {
