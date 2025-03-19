@@ -24,8 +24,6 @@ const index = async (req, res) => {
       ]);
     }
 
-    // const links = await query;
-
     // Sort links by createdAt in descending order
     const links = await query.orderBy("createdAt", "desc");
 
@@ -47,7 +45,7 @@ const addLink = async (req, res) => {
     const { title, url, description, thumbnail, tags } = req.body;
 
     const trimmedTitle = title.trim();
-    const trimmedUrl = url.trim();
+    let trimmedUrl = url.trim();
     const trimmedDescription = description.trim();
     const trimmedThumbnail = thumbnail.trim();
     const trimmedTags = Array.isArray(tags)
@@ -67,11 +65,21 @@ const addLink = async (req, res) => {
       return res.status(400).json({ error: "All fields must me filled." });
     }
 
-    if (
-      !validator.isURL(trimmedUrl) ||
-      !/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmedUrl)
-    ) {
-      return res.status(400).json({ error: "Invalid url format." });
+    // if (
+    //   !validator.isURL(trimmedUrl) ||
+    //   !/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmedUrl)
+    // ) {
+    //   return res.status(400).json({ error: "Invalid url format." });
+    // }
+
+    // Auto-complete URL if it doesn't start with a valid protocol
+    if (!/^https?:\/\//i.test(trimmedUrl)) {
+      trimmedUrl = `http://${trimmedUrl}`;
+    }
+
+    // Validate the URL after auto-completion
+    if (!validator.isURL(trimmedUrl)) {
+      return res.status(400).json({ error: "Invalid URL format." });
     }
 
     if (!Array.isArray(tags) || tags.some((tag) => tag.trim() === "")) {
@@ -104,6 +112,7 @@ const addLink = async (req, res) => {
 
     res.status(201).json({ id, message: "Link saved successfully." });
   } catch (err) {
+    console.error("Error in addLink function:", err);
     res.status(500).json({ error: "Failed to save the link." });
   }
 };
@@ -115,7 +124,7 @@ const updateLink = async (req, res) => {
     const { url, title, description, thumbnail, tags } = req.body;
 
     const trimmedTitle = title ? title.trim() : "";
-    const trimmedUrl = url ? url.trim() : "";
+    let trimmedUrl = url ? url.trim() : "";
     const trimmedDescription = description ? description.trim() : "";
     const trimmedThumbnail = thumbnail ? thumbnail.trim() : "";
     const trimmedTags = Array.isArray(tags)
@@ -137,45 +146,46 @@ const updateLink = async (req, res) => {
       return res.status(400).json({ error: "All fields must be filled." });
     }
 
-    if (
-      !validator.isURL(trimmedUrl) ||
-      !/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmedUrl)
-    ) {
-      return res.status(400).json({ error: "Invalid url format." });
+    // Auto-complete URL if it doesn't start with http:// or https://
+    if (!/^https?:\/\//i.test(trimmedUrl)) {
+      trimmedUrl = `http://${trimmedUrl}`;
     }
 
+    // Validate the URL after auto-completion
+    if (!validator.isURL(trimmedUrl)) {
+      return res.status(400).json({ error: "Invalid URL format." });
+    }
+
+    // Validate tags to ensure they are not empty
     if (!Array.isArray(trimmedTags) || trimmedTags.length === 0) {
       return res
         .status(400)
         .json({ error: "Tags must be a non-empty array of strings." });
     }
 
+    // Check for duplicate URLs
     const existingUrl = await knex("links").where({ url: trimmedUrl }).first();
     if (existingUrl && existingUrl.id !== Number(id)) {
       return res.status(400).json({ error: "This link already exist." });
     }
 
-    const linkToUpdate = await knex("links").where({ id }).first();
-    if (!linkToUpdate) {
-      return res.status(400).json({ error: "Link not found" });
-    }
-
-    console.log("Updating link:", {
-      id,
-      trimmedUrl,
-      trimmedTitle,
-      trimmedTags,
-    });
-
+    // Check for duplicate titles
     const existingTitle = await knex("links")
       .where({ title: trimmedTitle })
       .first();
     if (existingTitle && existingTitle.id !== Number(id)) {
       return res.status(400).json({
-        error: "This title already exists. Please choose a different title",
+        error: "This title already exists. Please choose a different title.",
       });
     }
 
+    // Check if the link exists
+    const linkToUpdate = await knex("links").where({ id }).first();
+    if (!linkToUpdate) {
+      return res.status(400).json({ error: "Link not found" });
+    }
+
+    // Update the link in the database
     await knex("links").where({ id }).update({
       url: trimmedUrl,
       title: trimmedTitle,
