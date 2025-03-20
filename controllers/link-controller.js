@@ -2,6 +2,28 @@ import initKnex from "knex";
 import configuration from "../knexfile.js";
 const knex = initKnex(configuration);
 import validator from "validator";
+import { load } from "cheerio";
+import axios from "axios";
+
+const extractThumbnail = async (url) => {
+  try {
+    const { data: html } = await axios.get(url); // Fetch the HTML content
+    const $ = load(html); // Parse the HTML with Cheerio
+
+    const ogImage = $('meta[property="og:image"]').attr("content"); // Extract OpenGraph image
+    if (ogImage) {
+      console.log("Thumbnail found:", ogImage);
+      return ogImage; // Return the thumbnail if found
+    } else {
+      console.warn("No OpenGraph image found. Using default thumbnail.");
+      return "https://your-default-thumbnail-url.com/default.png";
+    }
+  } catch (error) {
+    console.error("Error fetching or parsing the URL:", error.message);
+    return "https://your-default-thumbnail-url.com/default.png"; // Fallback to default image
+  }
+};
+
 
 // Get all links (GET) || Search and filtering
 const index = async (req, res) => {
@@ -42,12 +64,12 @@ const index = async (req, res) => {
 
 const addLink = async (req, res) => {
   try {
-    const { title, url, description, thumbnail, tags } = req.body;
+    const { title, url, description, tags } = req.body;
 
     const trimmedTitle = title.trim();
     let trimmedUrl = url.trim();
     const trimmedDescription = description.trim();
-    const trimmedThumbnail = thumbnail.trim();
+    // const trimmedThumbnail = thumbnail.trim();
     const trimmedTags = Array.isArray(tags)
       ? tags.map((tag) => tag.trim()).filter(Boolean)
       : tags
@@ -59,18 +81,11 @@ const addLink = async (req, res) => {
       !trimmedTitle ||
       !trimmedUrl ||
       !trimmedDescription ||
-      !trimmedThumbnail ||
+      // !trimmedThumbnail ||
       trimmedTags.length === 0
     ) {
       return res.status(400).json({ error: "All fields must me filled." });
     }
-
-    // if (
-    //   !validator.isURL(trimmedUrl) ||
-    //   !/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmedUrl)
-    // ) {
-    //   return res.status(400).json({ error: "Invalid url format." });
-    // }
 
     // Auto-complete URL if it doesn't start with a valid protocol
     if (!/^https?:\/\//i.test(trimmedUrl)) {
@@ -102,11 +117,20 @@ const addLink = async (req, res) => {
       });
     }
 
+    // Automatically extract thumbnail
+    let thumbnail = await extractThumbnail(trimmedUrl);
+    // Validate thumbnail url
+    if (!validator.isURL(thumbnail)) {
+      console.warn("Invalid thumbnail URL. Using default thumbnail.");
+      thumbnail = "https://your-default-thumbnail-url.com/default.png";
+    }
+    
+
     const [id] = await knex("links").insert({
       url: trimmedUrl,
       title: trimmedTitle,
       description: trimmedDescription,
-      thumbnail: trimmedThumbnail,
+      thumbnail,
       tags: JSON.stringify(trimmedTags),
     });
 
