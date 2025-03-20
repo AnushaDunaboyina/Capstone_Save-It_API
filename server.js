@@ -40,10 +40,9 @@ app.use(
   express.static(path.join(__dirname, "/uploads-documents"))
 );
 
-console.log(
-  "Serving static files from:",
-  path.join(__dirname, "/uploads-documents")
-);
+// Serve static files from the assets directory
+app.use("/assets", express.static(path.join(__dirname, "assets")));
+
 
 app.use("/api/documents", documentRoutes);
 

@@ -5,6 +5,8 @@ import validator from "validator";
 import { load } from "cheerio";
 import axios from "axios";
 
+const DEFAULT_THUMBNAIL = "http://localhost:5050/assets/default-thumbnail1.jpg";
+
 const extractThumbnail = async (url) => {
   try {
     const { data: html } = await axios.get(url); // Fetch the HTML content
@@ -16,14 +18,13 @@ const extractThumbnail = async (url) => {
       return ogImage; // Return the thumbnail if found
     } else {
       console.warn("No OpenGraph image found. Using default thumbnail.");
-      return "https://your-default-thumbnail-url.com/default.png";
+      return DEFAULT_THUMBNAIL;
     }
   } catch (error) {
     console.error("Error fetching or parsing the URL:", error.message);
-    return "https://your-default-thumbnail-url.com/default.png"; // Fallback to default image
+    return DEFAULT_THUMBNAIL; // Fallback to default image
   }
 };
-
 
 // Get all links (GET) || Search and filtering
 const index = async (req, res) => {
@@ -52,6 +53,7 @@ const index = async (req, res) => {
     // Format the createdAt field for display (only format for frontend)
     const formattedLinks = links.map((link) => ({
       ...link,
+      thumbnail: link.thumbnail || DEFAULT_THUMBNAIL, // Fallback thumbnail
       displayDate: new Date(link.createdAt).toLocaleDateString("en-US"), // Format to MM/DD/YYYY for display
     }));
     res.status(200).json(formattedLinks);
@@ -122,9 +124,8 @@ const addLink = async (req, res) => {
     // Validate thumbnail url
     if (!validator.isURL(thumbnail)) {
       console.warn("Invalid thumbnail URL. Using default thumbnail.");
-      thumbnail = "https://your-default-thumbnail-url.com/default.png";
+      thumbnail = DEFAULT_THUMBNAIL;
     }
-    
 
     const [id] = await knex("links").insert({
       url: trimmedUrl,
