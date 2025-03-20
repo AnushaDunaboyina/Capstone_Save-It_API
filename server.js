@@ -9,6 +9,7 @@ import fs from "fs";
 import documentRoutes from "./routes/documents-routes.js";
 import linkRoutes from "./routes/links-routes.js";
 import noteRoutes from "./routes/notes-routes.js";
+import calendarRoutes from "./routes/calendar-routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -32,9 +33,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   "/uploads-documents",
   (req, res, next) => {
-    
     const resolvedPath = path.join(__dirname, "/uploads-documents", req.path);
-    
+
     next();
   },
   express.static(path.join(__dirname, "/uploads-documents"))
@@ -43,12 +43,13 @@ app.use(
 // Serve static files from the assets directory
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 
-
 app.use("/api/documents", documentRoutes);
 
 app.use("/api/links", linkRoutes);
 
 app.use("/api/notes", noteRoutes);
+
+app.use("/api/calendar", calendarRoutes);
 
 // Default route
 app.get("/", (_req, res) => {
