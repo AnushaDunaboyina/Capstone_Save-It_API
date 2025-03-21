@@ -1,13 +1,13 @@
 import fs from "fs";
 import path from "path";
-// import { v4 as uuidv4 } from "uuid";
-// Define the path for the calendar JSON file
+import { v4 as uuidv4 } from "uuid";
+
 const dataFilePath = path.resolve("data", "calendar.json");
 
-// Ensure the file exists and is initialized
+// Ensure the JSON file exists
 const ensureFileExists = () => {
   if (!fs.existsSync(dataFilePath)) {
-    fs.writeFileSync(dataFilePath, JSON.stringify({}));
+    fs.writeFileSync(dataFilePath, JSON.stringify({ events: [] }));
   }
 };
 
@@ -22,86 +22,92 @@ const saveData = (data) => {
   fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
 };
 
-// Schedule a reminder (server-side)
+// Schedule a reminder (for Push Notifications)
 const scheduleReminder = (event) => {
-  const now = new Date().getTime();
+  const now = Date.now();
   const reminderTime = new Date(event.reminderTime).getTime();
 
   if (reminderTime > now) {
     const delay = reminderTime - now;
     setTimeout(() => {
-      console.log(`Reminder: ${event.title}`); // This can be replaced with a notification system
+      console.log(`Push Notification: Reminder for "${event.title}" at ${event.start}`);
+      // Here, you could also send a notification via WebSocket or other APIs
     }, delay);
   }
 };
 
-// Add an event (POST)
+// API Endpoints
+const getEvents = (req, res) => {
+  try {
+    const data = loadData();
+    res.status(200).json(data.events); // Return all events
+  } catch (error) {
+    console.error("Error retrieving events:", error.message);
+    res.status(500).json({ error: "Failed to retrieve events." });
+  }
+};
+
 const addEvent = (req, res) => {
   try {
-    const { date, type, title, color, reminderTime } = req.body;
+    const { start, end, title, type, color, reminderTime, isCompleted, notes } = req.body;
 
     const data = loadData();
 
-    // Ensure the date has an array initialized
-    if (!data[date]) {
-      data[date] = [];
-    }
+    // Create a new event object
+    const newEvent = {
+      id: uuidv4(),
+      start,
+      end,
+      title,
+      type,
+      color,
+      reminderTime,
+      isCompleted: type === "To-Do" ? isCompleted ?? false : undefined, // Only relevant for To-Do
+      notes: type === "Memory" ? notes || "" : undefined, // Only for Memory events
+    };
 
-    // Add the new event
-    const newEvent = { title, type, color, reminderTime };
-    data[date].push(newEvent);
+    data.events.push(newEvent);
     saveData(data);
 
-    // Schedule the reminder
+    // Schedule reminder
     scheduleReminder(newEvent);
 
-    res.status(201).json({ message: "Event added successfully", data });
+    res.status(201).json({ message: "Event added successfully", event: newEvent });
   } catch (error) {
     console.error("Error adding event:", error.message);
     res.status(500).json({ error: "Failed to add event." });
   }
 };
 
-// Update an existing event (PATCH)
+
 const updateEvent = (req, res) => {
   try {
-    const { date, title, type, color, reminderTime } = req.body; // Fields to update
-    const { id } = req.params; // Extract ID from URL
-
-    if (!date || !id) {
-      return res.status(400).json({ error: "Date and ID are required to update an event." });
-    }
+    const { id } = req.params;
+    const { start, end, title, type, color, reminderTime, isCompleted, notes } = req.body;
 
     const data = loadData();
 
-    // Check if the date exists
-    if (!data[date]) {
-      return res.status(404).json({ error: "No events found for the provided date." });
-    }
-
-    // Find the event by ID
-    const eventIndex = data[date].findIndex((event) => event.id === id);
+    const eventIndex = data.events.findIndex((event) => event.id === id);
 
     if (eventIndex === -1) {
       return res.status(404).json({ error: "Event not found." });
     }
 
-    // Update only the provided fields
-    const eventToUpdate = data[date][eventIndex];
-    eventToUpdate.title = title ?? eventToUpdate.title;
-    eventToUpdate.type = type ?? eventToUpdate.type;
-    eventToUpdate.color = color ?? eventToUpdate.color;
-    eventToUpdate.reminderTime = reminderTime ?? eventToUpdate.reminderTime;
+    // Update event details
+    data.events[eventIndex] = {
+      ...data.events[eventIndex],
+      start: start ?? data.events[eventIndex].start,
+      end: end ?? data.events[eventIndex].end,
+      title: title ?? data.events[eventIndex].title,
+      type: type ?? data.events[eventIndex].type,
+      color: color ?? data.events[eventIndex].color,
+      reminderTime: reminderTime ?? data.events[eventIndex].reminderTime,
+      isCompleted: type === "To-Do" ? isCompleted ?? data.events[eventIndex].isCompleted : undefined,
+      notes: type === "Memory" ? notes ?? data.events[eventIndex].notes : undefined,
+    };
 
-    // Save the updated data
     saveData(data);
-
-    // Reschedule the reminder if needed
-    if (reminderTime) {
-      scheduleReminder(eventToUpdate);
-    }
-
-    res.status(200).json({ message: "Event updated successfully", data });
+    res.status(200).json({ message: "Event updated successfully", event: data.events[eventIndex] });
   } catch (error) {
     console.error("Error updating event:", error.message);
     res.status(500).json({ error: "Failed to update event." });
@@ -109,60 +115,27 @@ const updateEvent = (req, res) => {
 };
 
 
-// Get events (GET)
-const getEvents = (req, res) => {
-  try {
-    const { date } = req.query; // Retrieve date from query params
-    const data = loadData();
-
-    if (date) {
-      res.status(200).json(data[date] || []);
-    } else {
-      res.status(200).json(data);
-    }
-  } catch (error) {
-    console.error("Error retrieving events:", error.message);
-    res.status(500).json({ error: "Failed to retrieve events." });
-  }
-};
-
-// Delete an existing event (DELETE)
 const deleteEvent = (req, res) => {
   try {
-    const { date } = req.body; // Date of the event
-    const { id } = req.params; // ID of the event to delete
-
-    if (!date || !id) {
-      return res.status(400).json({ error: "Date and ID are required to delete an event." });
-    }
+    const { id } = req.params;
 
     const data = loadData();
 
-    // Check if the date exists
-    if (!data[date]) {
-      return res.status(404).json({ error: "No events found for the provided date." });
-    }
+    const updatedEvents = data.events.filter((event) => event.id !== id);
 
-    // Filter out the event with the provided ID
-    const updatedEvents = data[date].filter((event) => event.id !== id);
-
-    if (updatedEvents.length === data[date].length) {
+    if (updatedEvents.length === data.events.length) {
       return res.status(404).json({ error: "Event not found." });
     }
 
-    data[date] = updatedEvents;
-
-    // If no events are left for the date, remove the date key
-    if (data[date].length === 0) {
-      delete data[date];
-    }
+    data.events = updatedEvents;
 
     saveData(data);
-    res.status(200).json({ message: "Event deleted successfully", data });
+
+    res.status(200).json({ message: "Event deleted successfully" });
   } catch (error) {
     console.error("Error deleting event:", error.message);
     res.status(500).json({ error: "Failed to delete event." });
   }
 };
 
-export { getEvents, updateEvent, addEvent, deleteEvent };
+export { getEvents, addEvent, updateEvent, deleteEvent };
