@@ -25,7 +25,6 @@ const index = async (req, res) => {
     // Sort notes by createdAt in descending order
     const notes = await query.orderBy("createdAt", "desc");
 
-
     // Format the createdAt field for display (only format for frontend)
     const formattedNotes = notes.map((note) => ({
       ...note,
