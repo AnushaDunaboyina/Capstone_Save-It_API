@@ -14,7 +14,7 @@ const extractThumbnail = async (url) => {
 
     const ogImage = $('meta[property="og:image"]').attr("content"); // Extract OpenGraph image
     if (ogImage) {
-      console.log("Thumbnail found:", ogImage);
+      
       return ogImage; // Return the thumbnail if found
     } else {
       console.warn("No OpenGraph image found. Using default thumbnail.");

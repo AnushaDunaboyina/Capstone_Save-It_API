@@ -11,10 +11,6 @@ export const parseAndValidateTags = (tags) => {
     // Parse JSON strings
     const tagsArray = JSON.parse(tags).map((tag) => tag.trim());
 
-    // if (!Array.isArray(tagsArray)) {
-    //   throw new Error("Tags must be an array.");
-    // }
-    console.log("Parsed and trimmed tags:", tagsArray);
     return tagsArray;
   } catch (error) {
     console.error("Error in parseAndValidateTags:", error.message);
@@ -30,7 +26,6 @@ export const safelyDeleteFile = (filePath) => {
         console.error(`Failed to delete file at ${filePath}:`, err);
         return false; // Failure
       }
-      console.log(`Successfully deleted file at ${filePath}`);
       return true; // Success
     });
   }

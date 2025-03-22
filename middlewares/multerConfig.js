@@ -3,7 +3,6 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-
 // Define __dirname for ES module compatibility
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,7 +16,7 @@ const storage = multer.diskStorage({
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
-    console.log(uploadPath);
+
     cb(null, uploadPath); // Set the destination path
   },
 
@@ -28,9 +27,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit
   fileFilter: (req, file, cb) => {
-    console.log("File Filter - File:", file); // Debug file
     cb(null, true); // Allow all files
   },
 });

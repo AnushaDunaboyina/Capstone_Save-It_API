@@ -23,7 +23,7 @@ const index = async (req, res) => {
       "filepath",
       "createdAt",
       knex.raw("JSON_UNQUOTE(JSON_EXTRACT(tags, '$')) as tags")
-    ); // Fetch all documents from the database
+    );
 
     // Normalize filepaths to ensure they are relative public URLs
     const normalizedData = data.map((doc) => {
@@ -71,7 +71,7 @@ const addDocument = async (req, res) => {
 
     if (!filename || filename.trim() === "") {
       safelyDeleteFile(file.path); // Delete temporary uploaded file
-      console.log(`Temporary file deleted: ${file.path}`);
+
       return res.status(400).json({
         message: "Filename is required. Please provide a valid name.",
       });
@@ -89,7 +89,7 @@ const addDocument = async (req, res) => {
       tagsArray = parseAndValidateTags(tags);
     } catch (error) {
       safelyDeleteFile(file.path); // Clean up temporary file
-      console.log(`Temporary file deleted: ${file.path}`);
+
       return res.status(400).json({ message: error.message });
     }
 
@@ -99,23 +99,16 @@ const addDocument = async (req, res) => {
 
     // Define the new path
     const publicUrl = `/uploads-documents/${sanitizedFilename}${fileExtension}`;
-    console.log("Public URL for preview:", publicUrl);
+
     const newPath = path.join(
       __dirname,
       "../uploads-documents",
       `${sanitizedFilename}${fileExtension}`
     );
-    console.log("Uploaded file:", file);
-    console.log("Saving file to:", newPath);
 
     // Check for filename conflict and inform the user
     if (fs.existsSync(newPath)) {
-      console.log(
-        `File with the name "${sanitizedFilename}${fileExtension}" already exists.`
-      );
-
       safelyDeleteFile(file.path); // Deletes the temporary file to save memory
-      console.log(`Temporary file deleted: ${file.path}`); // Logs the deletion
 
       return res.status(400).json({
         message: `A file named "${sanitizedFilename}${fileExtension}" already exists. Please use a different filename.`,
@@ -124,7 +117,6 @@ const addDocument = async (req, res) => {
 
     // Rename the file
     fs.renameSync(file.path, newPath);
-    console.log("File renamed successfully.");
 
     // Create a new document object with file details
     const newDocument = {
@@ -161,15 +153,6 @@ const updateDocument = async (req, res) => {
   try {
     const { filename, tags } = req.body;
 
-    // Log the entire request payload
-    console.log("Received payload in updateDocument:", req.body);
-
-    // Log details about the tags field
-    if (tags) {
-      console.log("Type of tags:", typeof tags);
-      console.log("Tags content:", tags);
-    }
-
     // Validate filename and tags
     if (!filename || filename.trim() === "") {
       return res.status(400).json({ message: "Filename is required." });
@@ -184,12 +167,9 @@ const updateDocument = async (req, res) => {
       try {
         tagsArray = parseAndValidateTags(tags); // Parse JSON string
       } catch (error) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Invalid tags format. Tags must be a JSON array or string.",
-          });
+        return res.status(400).json({
+          message: "Invalid tags format. Tags must be a JSON array or string.",
+        });
       }
     } else {
       return res
@@ -197,7 +177,6 @@ const updateDocument = async (req, res) => {
         .json({ message: "Tags must be a JSON string or an array." });
     }
 
-    console.log("Parsed tags:", tagsArray);
     // Update the document in the database
     const fieldsUpdated = await knex("documents")
       .where({ id: req.params.id })
@@ -245,14 +224,10 @@ const deleteDocument = async (req, res) => {
     // Delete the associated file from the disk
     if (document.filepath) {
       safelyDeleteFile(document.filepath);
-      console.log(
-        `Deleted file associated with document: ${document.filepath}`
-      );
     }
 
     // Delete the document from the database
     await knex("documents").where({ id: req.params.id }).delete();
-    console.log(`Document with ID ${req.params.id} successfully deleted.`);
 
     res.status(200).json({
       message: "Document deleted successfully",
@@ -278,7 +253,7 @@ const searchDocuments = async (req, res) => {
       )
       .where("filename", "like", `%${query}%`) // Matches partial filname
       .orWhereRaw("JSON_CONTAINS(tags, ?)", [`"${query}"`]); // Search for query/tag in the tags array
-    console.log("Search results:", results);
+
     res.status(200).json(results);
   } catch (error) {
     res.status(500).json({
