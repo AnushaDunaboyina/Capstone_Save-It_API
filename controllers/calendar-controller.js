@@ -30,7 +30,6 @@ const scheduleReminder = (event) => {
   if (reminderTime > now) {
     const delay = reminderTime - now;
     setTimeout(() => {
-      console.log(`Push Notification: Reminder for "${event.title}" at ${event.start}`);
       // Here, you could also send a notification via WebSocket or other APIs
     }, delay);
   }
@@ -40,7 +39,7 @@ const scheduleReminder = (event) => {
 const getEvents = (req, res) => {
   try {
     const data = loadData();
-    res.status(200).json(data.events); // Return all events
+    res.status(200).json(data.events); 
   } catch (error) {
     console.error("Error retrieving events:", error.message);
     res.status(500).json({ error: "Failed to retrieve events." });
@@ -62,8 +61,8 @@ const addEvent = (req, res) => {
       type,
       color,
       reminderTime,
-      isCompleted: type === "To-Do" ? isCompleted ?? false : undefined, // Only relevant for To-Do
-      notes: type === "Memory" ? notes || "" : undefined, // Only for Memory events
+      isCompleted: type === "To-Do" ? isCompleted ?? false : undefined, 
+      notes: type === "Memory" ? notes || "" : undefined, 
     };
 
     data.events.push(newEvent);
