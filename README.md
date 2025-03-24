@@ -1,3 +1,30 @@
+# SaveIt - Backend
+
+## Overview
+This is the backend repository for **SaveIt**, an all-in-one organizer app. It provides the APIs for managing notes, links, documents, and calendar events. The backend handles user data and file uploads, integrates external AI services, and serves files to the frontend.
+
+## Features
+- **Notes**: Stores and processes user notes. Uses AI APIs for grammar correction and summarization.
+- **Links**: Stores and retrieves online links with thumbnails, tags, and descriptions. Extracts metadata using Cheerio.
+- **Documents**: Handles file uploads, categorization, and retrieval.
+- **Calendar**: Manages event creation, editing, and reminders.
+
+## Tech Stack
+- **Node.js**: Server-side runtime environment.
+- **Express.js**: Framework for building the RESTful APIs.
+- **Knex.js**: SQL query builder to interact with the database.
+- **MySQL**: Database to store user data and uploaded files.
+
+## Tools and Libraries
+- **Multer**: For handling file uploads.
+- **Cheerio**: For extracting metadata from webpages.
+- **dotenv**: For managing environment variables.
+- **express.static**: For serving uploaded files via a public URL.
+
+
+
+
+
 # Server Setup Instructions
 
 ## Environment Varaibles
